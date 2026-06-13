@@ -1,4 +1,4 @@
-import { createSignal, For, Show } from 'solid-js';
+import { createSignal, createEffect, onMount, For, Show } from 'solid-js';
 
 export default function FlashcardApp() {
   const [text, setText] = createSignal('');
@@ -7,6 +7,30 @@ export default function FlashcardApp() {
   const [exitedCards, setExitedCards] = createSignal(new Map());
   const [isLoading, setIsLoading] = createSignal(false);
   const [error, setError] = createSignal('');
+
+  let isMounted = false;
+
+  onMount(() => {
+    try {
+      const saved = localStorage.getItem('user_flashcards');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setCards(parsed);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to parse user_flashcards from localStorage', err);
+    }
+    isMounted = true;
+  });
+
+  createEffect(() => {
+    const currentCards = cards();
+    if (isMounted) {
+      localStorage.setItem('user_flashcards', JSON.stringify(currentCards));
+    }
+  });
 
   const handleInput = (e) => {
     setText(e.target.value);
@@ -89,7 +113,7 @@ export default function FlashcardApp() {
     <div class="p-6 max-w-5xl mx-auto font-sans">
       <div class="text-center mb-10 mt-6">
         <h1 class="text-4xl font-bold text-primary mb-3 tracking-tight">Instant Flashcards</h1>
-        <p class="text-text-muted text-lg">Powered by Vercel AI SDK & OpenAI</p>
+        <p class="text-text-muted text-lg">Powered by Vercel AI SDK & Gemini</p>
       </div>
       
       <div class="bg-card p-2 rounded-2xl shadow-sm border border-slate-100 mb-8 relative">
