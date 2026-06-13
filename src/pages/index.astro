@@ -1,0 +1,19 @@
+---
+import '../styles/global.css';
+import FlashcardApp from '../components/FlashcardApp.jsx';
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="viewport" content="width=device-width" />
+		<meta name="generator" content={Astro.generator} />
+		<title>AI Flash Cards</title>
+	</head>
+	<body class="bg-base text-text-base antialiased selection:bg-secondary selection:text-white">
+		<main class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+			<FlashcardApp client:load />
+		</main>
+	</body>
+</html>

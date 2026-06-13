@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  /* Enforces 3D space depth */
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  /* Instructs GPU to track the element's flip state */
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+  /* Hides the back of the card when it is facing away */
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+  /* Rotates the element precisely 180 degrees */
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+
+  /* Slide Animations for Skip and Complete */
+  .slide-out-left {
+    transform: translateX(-150%) rotateY(-20deg);
+    opacity: 0;
+  }
+  .slide-out-right {
+    transform: translateX(150%) rotateY(20deg);
+    opacity: 0;
+  }
+}
+
+body {
+  background-color: theme('colors.base');
+  color: theme('colors.text-base');
+  font-family: theme('fontFamily.sans');
+  margin: 0;
+  min-height: 100vh;
+}
