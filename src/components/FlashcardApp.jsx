@@ -1,38 +1,63 @@
 import { createSignal, For, Show } from 'solid-js';
 
-// Pure, highly-optimized JavaScript parsing function
-function parseFlashcards(rawText) {
-  if (!rawText.trim()) return [];
-
-  // Matches either "Q: front A: back" or "front : back" variations globally
-  const regex = /(?:Q:)?\s*(.*?)\s*(?::|A:)\s*(.*)/gi;
-  const cards = [];
-  let match;
-
-  while ((match = regex.exec(rawText)) !== null) {
-    if (match[1] && match[2]) {
-      cards.push({
-        id: Math.random().toString(36).substring(2, 9),
-        front: match[1].trim(),
-        back: match[2].trim()
-      });
-    }
-  }
-  return cards;
-}
-
 export default function FlashcardApp() {
   const [text, setText] = createSignal('');
   const [cards, setCards] = createSignal([]);
   const [flippedCards, setFlippedCards] = createSignal(new Set());
   const [exitedCards, setExitedCards] = createSignal(new Map());
+  const [isLoading, setIsLoading] = createSignal(false);
+  const [error, setError] = createSignal('');
 
   const handleInput = (e) => {
-    const value = e.target.value;
-    setText(value);
-    setCards(parseFlashcards(value));
+    setText(e.target.value);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // Prevent adding a new line
+      generateFromAPI();
+    }
+  };
+
+  const generateFromAPI = async () => {
+    if (!text().trim() || isLoading()) return;
+    
+    setIsLoading(true);
+    setError('');
+    setCards([]);
     setFlippedCards(new Set());
     setExitedCards(new Map());
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: text() })
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to generate flashcards. Make sure your API key is correct.');
+      }
+
+      const data = await res.json();
+      
+      if (data.flashcards && Array.isArray(data.flashcards)) {
+        const withIds = data.flashcards.map(c => ({
+          id: Math.random().toString(36).substring(2, 9),
+          front: c.question,
+          back: c.answer
+        }));
+        setCards(withIds);
+        // Clear textarea after successful generation as polish
+        setText('');
+      } else {
+        throw new Error('Invalid response format from AI');
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const toggleFlip = (id) => {
@@ -48,23 +73,75 @@ export default function FlashcardApp() {
     setExitedCards(next);
   };
 
+  const restartDeck = () => {
+    setFlippedCards(new Set());
+    setExitedCards(new Map());
+  };
+
+  const clearAll = () => {
+    setCards([]);
+    setFlippedCards(new Set());
+    setExitedCards(new Map());
+    setError('');
+  };
+
   return (
     <div class="p-6 max-w-5xl mx-auto font-sans">
-      <div class="text-center mb-12 mt-8">
+      <div class="text-center mb-10 mt-6">
         <h1 class="text-4xl font-bold text-primary mb-3 tracking-tight">Instant Flashcards</h1>
-        <p class="text-text-muted text-lg">Fast, optimized memory reinforcement.</p>
+        <p class="text-text-muted text-lg">Powered by Vercel AI SDK & OpenAI</p>
       </div>
       
-      <div class="bg-card p-2 rounded-2xl shadow-sm border border-slate-100 mb-12">
+      <div class="bg-card p-2 rounded-2xl shadow-sm border border-slate-100 mb-8 relative">
         <textarea
           class="w-full h-40 p-4 rounded-xl focus:ring-2 focus:ring-secondary focus:border-transparent outline-none resize-y text-text-base placeholder-text-muted transition-all duration-200 bg-transparent"
-          placeholder="Paste text here. Example:&#10;Q: What is HTML? A: HyperText Markup Language&#10;CSS : Cascading Style Sheets"
+          placeholder="Paste your study material here and hit Enter...&#10;Example: 'Mitochondria is the powerhouse of the cell.'"
           value={text()}
           onInput={handleInput}
+          onKeyDown={handleKeyDown}
         />
+        
+        {/* Generate Button integrated near the textarea */}
+        <div class="absolute bottom-4 right-4">
+          <button 
+            class="bg-secondary hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-xl shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 flex items-center justify-center min-w-[140px]"
+            onClick={generateFromAPI}
+            disabled={isLoading() || !text().trim()}
+          >
+            {isLoading() ? (
+              <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+            ) : 'Generate'}
+          </button>
+        </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-12">
+      <Show when={error()}>
+        <div class="flex justify-center mb-8">
+          <p class="text-red-500 text-sm font-medium bg-red-50 py-2 px-4 rounded-lg border border-red-100">{error()}</p>
+        </div>
+      </Show>
+
+      {/* Toolbar for the generated cards */}
+      <Show when={cards().length > 0}>
+        <div class="flex justify-between items-center mb-6 px-2">
+          <p class="text-text-muted font-medium text-sm">
+            {cards().length - exitedCards().size} cards remaining
+          </p>
+          <div class="flex gap-3">
+            <button onClick={restartDeck} class="text-sm font-medium text-secondary hover:text-blue-800 transition-colors">
+              Restart Deck
+            </button>
+            <button onClick={clearAll} class="text-sm font-medium text-slate-400 hover:text-red-500 transition-colors">
+              Clear All
+            </button>
+          </div>
+        </div>
+      </Show>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-8 gap-y-12 pb-12">
         <For each={cards()}>
           {(card) => {
             const isFlipped = () => flippedCards().has(card.id);
@@ -72,9 +149,11 @@ export default function FlashcardApp() {
 
             const [hidden, setHidden] = createSignal(false);
             
-            // To animate then remove, we apply classes based on exitState, and after 500ms set hidden
             if (exitState()) {
               setTimeout(() => setHidden(true), 450);
+            } else {
+              // If restarted, unhide
+              setHidden(false);
             }
 
             return (
@@ -97,7 +176,7 @@ export default function FlashcardApp() {
                       </div>
 
                       {/* Back Side */}
-                      <div class="absolute inset-0 bg-slate-50 border border-slate-200 rounded-2xl p-6 flex items-center justify-center text-center font-semibold text-secondary rotate-y-180 backface-hidden">
+                      <div class="absolute inset-0 bg-slate-50 border border-slate-200 rounded-2xl p-6 flex items-center justify-center text-center font-semibold text-secondary rotate-y-180 backface-hidden overflow-y-auto">
                         <p class="text-lg leading-snug">{card.back}</p>
                       </div>
                     </div>
@@ -127,10 +206,10 @@ export default function FlashcardApp() {
         </For>
       </div>
       
-      <Show when={cards().length === 0}>
-        <div class="text-center mt-12 p-12 border-2 border-dashed border-slate-200 rounded-2xl bg-white/50">
-          <p class="text-text-muted text-lg font-medium">No valid flashcards detected yet.</p>
-          <p class="text-slate-400 text-sm mt-2">Paste text in 'Question : Answer' format to begin.</p>
+      <Show when={cards().length === 0 && !isLoading() && !error()}>
+        <div class="text-center p-12 border-2 border-dashed border-slate-200 rounded-2xl bg-white/50">
+          <p class="text-text-muted text-lg font-medium">Ready to start studying?</p>
+          <p class="text-slate-400 text-sm mt-2">Paste your notes and hit Enter to build flashcards instantly.</p>
         </div>
       </Show>
     </div>
