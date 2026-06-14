@@ -7,13 +7,86 @@ import FlashcardApp from '../components/FlashcardApp.jsx';
 	<head>
 		<meta charset="utf-8" />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<meta name="generator" content={Astro.generator} />
-		<title>AI Flash Cards</title>
+		<meta name="description" content="Generate AI-powered flashcards instantly from your study notes. Paste any text and get smart, concise flashcards powered by Gemini AI." />
+		<meta name="theme-color" content="#3B82F6" />
+		<title>AI Flash Cards — Instant Study Cards from Your Notes</title>
+
+		<!-- Google Fonts: Space Grotesk (headings) + Inter (body) -->
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
 	</head>
-	<body class="bg-base text-text-base antialiased selection:bg-secondary selection:text-white">
-		<main class="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+	<body class="antialiased">
+
+		<!-- Theme Toggle Button -->
+		<button id="theme-toggle" class="theme-toggle" aria-label="Toggle dark mode" title="Toggle theme">
+			<span id="theme-icon">☀️</span>
+		</button>
+
+		<!-- Anime Characters (desktop only) -->
+		<img
+			src="/images/anime-scholar-left.png"
+			alt="Anime scholar character"
+			class="anime-character left hidden lg:block"
+			loading="lazy"
+		/>
+		<img
+			src="/images/anime-genius-right.png"
+			alt="Anime genius character"
+			class="anime-character right hidden lg:block"
+			loading="lazy"
+		/>
+
+		<!-- Main Content -->
+		<main class="min-h-screen py-12 px-4 sm:px-6 lg:px-8 relative z-20">
 			<FlashcardApp client:load />
 		</main>
+
+		<!-- Background decoration dots -->
+		<div class="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
+			<div style="position:absolute;top:10%;left:15%;width:4px;height:4px;border-radius:50%;background:var(--color-accent);opacity:0.15;animation:particle-float 8s ease-in-out infinite;"></div>
+			<div style="position:absolute;top:30%;right:20%;width:6px;height:6px;border-radius:50%;background:var(--color-accent);opacity:0.1;animation:particle-float 10s ease-in-out infinite 1s;"></div>
+			<div style="position:absolute;bottom:20%;left:25%;width:3px;height:3px;border-radius:50%;background:var(--color-accent);opacity:0.12;animation:particle-float 12s ease-in-out infinite 2s;"></div>
+			<div style="position:absolute;top:60%;right:30%;width:5px;height:5px;border-radius:50%;background:var(--color-accent);opacity:0.08;animation:particle-float 9s ease-in-out infinite 0.5s;"></div>
+			<div style="position:absolute;top:80%;left:60%;width:4px;height:4px;border-radius:50%;background:var(--color-accent);opacity:0.1;animation:particle-float 11s ease-in-out infinite 3s;"></div>
+		</div>
+
+		<!-- Theme Toggle Script -->
+		<script is:inline>
+			(function() {
+				const html = document.documentElement;
+				const toggle = document.getElementById('theme-toggle');
+				const icon = document.getElementById('theme-icon');
+
+				// Check saved preference or system preference
+				function getTheme() {
+					const saved = localStorage.getItem('theme');
+					if (saved) return saved;
+					return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+				}
+
+				function applyTheme(theme) {
+					if (theme === 'dark') {
+						html.classList.add('dark');
+						icon.textContent = '🌙';
+					} else {
+						html.classList.remove('dark');
+						icon.textContent = '☀️';
+					}
+					localStorage.setItem('theme', theme);
+				}
+
+				// Initialize on load
+				applyTheme(getTheme());
+
+				// Toggle on click
+				toggle.addEventListener('click', () => {
+					const current = html.classList.contains('dark') ? 'dark' : 'light';
+					applyTheme(current === 'dark' ? 'light' : 'dark');
+				});
+			})();
+		</script>
 	</body>
 </html>

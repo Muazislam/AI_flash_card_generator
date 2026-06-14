@@ -1,4 +1,30 @@
+# Dependencies
 node_modules/
+
+# Astro build and cache
+dist/
+.astro/
+
+# Environment variables and secrets
 .env
 .env.local
-dist/
+.env.production
+.env.development
+.env.staging
+.env.*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+yarn-error.log*
+
+# Editor directories and system files
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
