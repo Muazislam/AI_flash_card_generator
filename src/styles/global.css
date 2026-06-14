@@ -198,22 +198,26 @@ body {
 .anime-character {
   position: fixed;
   bottom: 0;
-  width: 240px;
+  width: 320px; /* Increased default size */
   pointer-events: none;
   z-index: 10;
-  animation: float 4s ease-in-out infinite;
-  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.2));
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.15));
   opacity: 0.85;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+@media (min-width: 1400px) {
+  .anime-character {
+    width: 380px; /* Even larger on wide desktop screens */
+  }
 }
 .anime-character:hover {
   opacity: 1;
 }
 .anime-character.left {
-  left: 16px;
+  left: 0px;
 }
 .anime-character.right {
-  right: 16px;
+  right: 0px;
 }
 
 /* ═══════════════════════════════════════════
